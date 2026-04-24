@@ -1,0 +1,41 @@
+name: Pylint CI
+
+# ========== ЭТО САМОЕ ВАЖНОЕ ДЛЯ ЗАДАНИЯ ==========
+# Указываем, когда запускать pipeline
+on:
+  pull_request:
+    branches: [ dev ]     # ← ПРИ ПР В ВЕТКУ dev - ЗАПУСКАЕМ
+  push:
+    branches: [ dev ]     # ← ПРИ ПРЯМОМ ПУШЕ В dev - ТОЖЕ ЗАПУСКАЕМ
+
+jobs:
+  pylint_check:
+    name: Run Pylint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+          # Если есть requirements.txt - раскомментируйте следующую строку
+          # pip install -r requirements.txt
+      
+      - name: Run Pylint
+        run: |
+          # Ищем все .py файлы и проверяем их
+          pylint $(git ls-files '*.py') --exit-zero --output=lint.txt || true
+      
+      - name: Upload lint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pylint-report
+          path: lint.txt
