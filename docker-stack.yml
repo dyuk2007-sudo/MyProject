@@ -1,0 +1,54 @@
+
+version: '3.8'
+
+services:
+  # ============================================
+  # NGINX REVERSE PROXY
+  # ============================================
+  nginx:
+    # Используем существующий образ (НЕ build)
+    image: nginx-proxy:latest
+    ports:
+      - "8080:80"
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      restart_policy:
+        condition: on-failure
+    networks:
+      - swarm-network
+
+  # ============================================
+  # USER SERVICE
+  # ============================================
+  user-service:
+    image: myproject-user-service:latest
+    environment:
+      - PORT=5001
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    networks:
+      - swarm-network
+
+  # ============================================
+  # ORDER SERVICE
+  # ============================================
+  order-service:
+    image: myproject-order-service:latest
+    environment:
+      - PORT=5002
+      - USER_SERVICE_URL=http://user-service:5001
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - swarm-network
+
+networks:
+  swarm-network:
+    driver: overlay
+    attachable: true
